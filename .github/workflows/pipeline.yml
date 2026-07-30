@@ -1,0 +1,16 @@
+﻿name: Pipeline DevSecOps
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
