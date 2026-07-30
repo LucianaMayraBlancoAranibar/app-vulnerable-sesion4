@@ -1,10 +1,19 @@
 ﻿import ast
 import operator
+import os
 import sqlite3
 
 from flask import Flask, request
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
+
+secret_key = os.getenv("FLASK_SECRET_KEY")
+if not secret_key:
+    raise RuntimeError("La variable FLASK_SECRET_KEY debe estar configurada")
+
+app.config["SECRET_KEY"] = secret_key
+csrf = CSRFProtect(app)
 
 OPERADORES_PERMITIDOS = {
     ast.Add: operator.add,
@@ -17,15 +26,26 @@ OPERADORES_PERMITIDOS = {
 
 
 def evaluar_nodo(nodo):
-    if isinstance(nodo, ast.Constant) and isinstance(nodo.value, (int, float)):
+    if isinstance(nodo, ast.Constant) and isinstance(
+        nodo.value, (int, float)
+    ):
         return nodo.value
 
-    if isinstance(nodo, ast.BinOp) and type(nodo.op) in OPERADORES_PERMITIDOS:
+    if (
+        isinstance(nodo, ast.BinOp)
+        and type(nodo.op) in OPERADORES_PERMITIDOS
+    ):
         izquierda = evaluar_nodo(nodo.left)
         derecha = evaluar_nodo(nodo.right)
-        return OPERADORES_PERMITIDOS[type(nodo.op)](izquierda, derecha)
+        return OPERADORES_PERMITIDOS[type(nodo.op)](
+            izquierda,
+            derecha,
+        )
 
-    if isinstance(nodo, ast.UnaryOp) and type(nodo.op) in OPERADORES_PERMITIDOS:
+    if (
+        isinstance(nodo, ast.UnaryOp)
+        and type(nodo.op) in OPERADORES_PERMITIDOS
+    ):
         return OPERADORES_PERMITIDOS[type(nodo.op)](
             evaluar_nodo(nodo.operand)
         )
