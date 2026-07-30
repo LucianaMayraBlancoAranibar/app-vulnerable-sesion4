@@ -33,6 +33,7 @@ jobs:
             -Dsonar.organization=lucianamayrablancoaranibar
             -Dsonar.projectKey=LucianaMayraBlancoAranibar_app-vulnerable-sesion4
             -Dsonar.sources=.
+            -Dsonar.exclusions=.github/**
             -Dsonar.qualitygate.wait=true
 
   sca:

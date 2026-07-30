@@ -1,23 +1,70 @@
-from flask import Flask, request
+﻿import ast
+import operator
 import sqlite3
 
+from flask import Flask, request
+
 app = Flask(__name__)
-DB_PASSWORD = "admin123"  # Credencial hardcodeada (SAST)
 
-@app.route("/buscar")
+OPERADORES_PERMITIDOS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+
+def evaluar_nodo(nodo):
+    if isinstance(nodo, ast.Constant) and isinstance(nodo.value, (int, float)):
+        return nodo.value
+
+    if isinstance(nodo, ast.BinOp) and type(nodo.op) in OPERADORES_PERMITIDOS:
+        izquierda = evaluar_nodo(nodo.left)
+        derecha = evaluar_nodo(nodo.right)
+        return OPERADORES_PERMITIDOS[type(nodo.op)](izquierda, derecha)
+
+    if isinstance(nodo, ast.UnaryOp) and type(nodo.op) in OPERADORES_PERMITIDOS:
+        return OPERADORES_PERMITIDOS[type(nodo.op)](
+            evaluar_nodo(nodo.operand)
+        )
+
+    raise ValueError("Expresión no permitida")
+
+
+def evaluar_expresion(expresion):
+    if len(expresion) > 100:
+        raise ValueError("Expresión demasiado larga")
+
+    arbol = ast.parse(expresion, mode="eval")
+    return evaluar_nodo(arbol.body)
+
+
+@app.get("/buscar")
 def buscar():
-    termino = request.args.get("q")
-    conexion = sqlite3.connect("datos.db")
-    # Inyeccion SQL intencional (SAST)
-    consulta = "SELECT * FROM productos WHERE nombre = '" + termino + "'"
-    resultado = conexion.execute(consulta)
-    return str(resultado.fetchall())
+    termino = request.args.get("q", "").strip()
 
-@app.route("/calcular")
+    with sqlite3.connect("datos.db") as conexion:
+        resultados = conexion.execute(
+            "SELECT * FROM productos WHERE nombre = ?",
+            (termino,),
+        ).fetchall()
+
+    return {"resultados": resultados}
+
+
+@app.get("/calcular")
 def calcular():
-    expresion = request.args.get("expr")
-    # Uso inseguro de eval (SAST)
-    return str(eval(expresion))
+    expresion = request.args.get("expr", "")
+
+    try:
+        resultado = evaluar_expresion(expresion)
+    except (SyntaxError, ValueError, ZeroDivisionError, OverflowError):
+        return {"error": "Expresión inválida"}, 400
+
+    return {"resultado": resultado}
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="127.0.0.1", port=8080)
