@@ -43,9 +43,20 @@ jobs:
       - name: Descargar repositorio para SCA
         uses: actions/checkout@v4
 
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias del proyecto
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Instalar Snyk CLI
+        uses: snyk/actions/setup@master
+
       - name: Bloquear por vulnerabilidades High o Critical
-        uses: snyk/actions/python@master
+        run: snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
