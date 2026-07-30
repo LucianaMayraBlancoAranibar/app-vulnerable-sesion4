@@ -33,3 +33,15 @@ jobs:
             -Dsonar.organization=lucianamayrablancoaranibar
             -Dsonar.projectKey=LucianaMayraBlancoAranibar_app-vulnerable-sesion4
             -Dsonar.sources=.
+
+  sca:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio para SCA
+        uses: actions/checkout@v4
+
+      - name: Analizar dependencias con Snyk
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
