@@ -12,7 +12,7 @@ secret_key = os.getenv("FLASK_SECRET_KEY")
 if not secret_key:
     raise RuntimeError("La variable FLASK_SECRET_KEY debe estar configurada")
 
-app.config["SECRET_KEY"] = secret_key
+app.secret_key = secret_key
 csrf = CSRFProtect(app)
 
 OPERADORES_PERMITIDOS = {
