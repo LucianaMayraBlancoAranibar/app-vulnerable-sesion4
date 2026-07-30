@@ -14,3 +14,22 @@ jobs:
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+
+  sast:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio para SAST
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ejecutar análisis SAST con SonarQube Cloud
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=lucianamayrablancoaranibar
+            -Dsonar.projectKey=LucianaMayraBlancoAranibar_app-vulnerable-sesion4
+            -Dsonar.sources=.
